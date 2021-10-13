@@ -1,0 +1,9 @@
+image:
+  # the registry to pull the agent image from
+  registry: registry.hub.docker.com/disi33
+  # the agent image name
+  name: dockwork-client
+  # the agent image name
+  tag: latest
+
+namespace: dockwork

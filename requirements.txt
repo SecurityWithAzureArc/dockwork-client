@@ -1,0 +1,2 @@
+containerd==1.5.*
+python-graphql-client==0.4.*

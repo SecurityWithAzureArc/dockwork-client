@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dockwork
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: dockwork
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: dockwork
+  template:
+    metadata:
+      labels:
+        name: dockwork
+    spec:
+      hostNetwork: true
+      containers:
+        - name: dockwork
+          image: {{ .Values.image.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+          volumeMounts:
+            - name: containerdsock
+              mountPath: /var/run/containerd/containerd.sock
+              readOnly: true
+      volumes:
+        - name: containerdsock
+          hostPath:
+            path: /var/run/containerd/containerd.sock
