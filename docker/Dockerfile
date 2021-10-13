@@ -1,10 +1,12 @@
-FROM python:3.10-bullseye
-
+FROM python:3.8-buster
 RUN mkdir ./app
 WORKDIR ./app
+RUN mkdir ./containerdshim
 
-COPY ./app/* .
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
-CMD ["python3", "./main.py"]
+COPY ./app/* .
+COPY ./app/containerdshim/* ./containerdshim
+
+CMD ["/bin/bash", "./run.sh"]

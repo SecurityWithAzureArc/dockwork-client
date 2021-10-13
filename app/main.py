@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+from containerdshim import containerdshim;
+
 def main():
-    print('Hello world')
+    containerdshim.list_images()
 
 
 if __name__ == '__main__':

@@ -4,6 +4,6 @@ image:
   # the agent image name
   name: dockwork-client
   # the agent image name
-  tag: latest
+  #tag: latest
 
 namespace: dockwork
