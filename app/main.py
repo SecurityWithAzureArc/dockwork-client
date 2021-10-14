@@ -15,7 +15,7 @@ def main():
   print('using backend websocket endpoint:', service_endpoint_ws)
   running_images = containerdshim.list_running_images()  
   print('Number of currently running images:', len(running_images))
-  print_image_data(running_images)
+  #print_image_data(running_images)
   print('================================')
 
   update_image_data()
@@ -36,11 +36,11 @@ def update_image_data():
 
   print('processing', len(imageData), 'images')
   
-  print_image_data(imageData)
+  #print_image_data(imageData)
 
-  #imagesInDb = graphql.listImagesQuery
-  #for imageObject in imageData:
-    #process_image(imagesInDb, imageObject)
+  imagesInDb = graphqlclient.listImages()
+  for imageObject in imageData:
+    process_image(imagesInDb, imageObject)
   
   currentTime = datetime.now()
   print('ended at time:', currentTime.strftime('%H:%M:%S'))
