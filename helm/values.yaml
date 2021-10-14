@@ -7,3 +7,6 @@ image:
   #tag: latest
 
 namespace: dockwork
+
+service: http://20.84.177.64/graphql
+websocketservice: ws://20.84.177.64/graphql

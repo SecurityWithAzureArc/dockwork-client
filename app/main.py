@@ -6,8 +6,13 @@ from data import image
 import threading
 from datetime import datetime
 import time
+import os
 
 def main():
+  service_endpoint = os.environ['SERVICE_ENDPOINT']
+  service_endpoint_ws = os.environ['SERVICE_ENDPOINT_WS']
+  print('using backend endpoint:', service_endpoint)
+  print('using backend websocket endpoint:', service_endpoint_ws)
   running_images = containerdshim.list_running_images()  
   print('Number of currently running images:', len(running_images))
   print_image_data(running_images)

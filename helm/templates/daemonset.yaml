@@ -27,6 +27,11 @@ spec:
             - name: hostdata
               mountPath: /hostdata/hostname
               readOnly: true
+          env:
+          - name: SERVICE_ENDPOINT
+            value: {{ .Values.service }}
+          - name: SERVICE_ENDPOINT_WS
+            value: {{ .Values.websocketservice }}
       volumes:
         - name: containerdsock
           hostPath:

@@ -1,8 +1,11 @@
 from python_graphql_client import GraphqlClient
 import asyncio
+import os
 
-client = GraphqlClient(endpoint="http://localhost:5000/graphql")
-deleteImageNotificationClient = GraphqlClient(endpoint="ws://localhost:5000/graphql")
+service_endpoint = os.environ['SERVICE_ENDPOINT']
+service_endpoint_ws = os.environ['SERVICE_ENDPOINT_WS']
+client = GraphqlClient(endpoint=service_endpoint)
+deleteImageNotificationClient = GraphqlClient(endpoint=service_endpoint_ws)
 
 deltedImageMutation = """
     mutation DeltedImage ($name: String!, $node: ImageNodeInput!) {
