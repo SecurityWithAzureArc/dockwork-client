@@ -23,7 +23,10 @@ deleteImageSubscription = """
         deleteImageNotification {
             id
             name
-            nodes
+            nodes {
+                name
+                namespace
+            }
         }
     }
 """
