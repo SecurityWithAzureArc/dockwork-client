@@ -8,13 +8,18 @@ from datetime import datetime
 import time
 
 def main():
+  running_images = containerdshim.list_running_images()  
+  print('Number of currently running images:', len(running_images))
+  print_image_data(running_images)
+  print('================================')
+
   update_image_data()
 
   while True:
     time.sleep(300)
 
 def update_image_data():
-  imageData = containerdshim.list_images()
+  imageData = containerdshim.list_all_images()
 
   print('starting image update process')
   currentTime = datetime.now()
@@ -41,10 +46,10 @@ def update_image_data():
 def print_image_data(imageData):
   print('')
   for imageObject in imageData:
-    print('image to process - name: ', imageObject.name)
-    print('                 - digest: ', imageObject.digest)
-    print('                 - namespace: ', imageObject.namespace)
-    print('                 - node: ', imageObject.node)
+    print('name: ', imageObject.name)
+    print('digest: ', imageObject.digest)
+    print('namespace: ', imageObject.namespace)
+    print('node: ', imageObject.node)
     print('')
 
 def process_image(imagesInDb, imageObject):
