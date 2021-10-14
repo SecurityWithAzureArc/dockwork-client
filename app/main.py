@@ -39,8 +39,9 @@ def update_image_data():
   #print_image_data(imageData)
 
   imagesInDb = graphqlclient.listImages()
-  for imageObject in imageData:
-    process_image(imagesInDb, imageObject)
+  process_images(imagesInDb, imageData)
+  # for imageObject in imageData:
+  #   process_image(imagesInDb, imageObject)
   
   currentTime = datetime.now()
   print('ended at time:', currentTime.strftime('%H:%M:%S'))
@@ -57,7 +58,15 @@ def print_image_data(imageData):
     print('node: ', imageObject.node)
     print('')
 
-def process_image(imagesInDb, imageObject):
+def process_images(imagesInDb, imageData):
+  imagesToAdd = []
+  for imageObject in imageData:
+    if imageObject.name not in imagesInDb:
+      imageToAdd = { "name": imageObject.name, "nodes": { "name": imageObject, "namespace": imageObject.namespace }}
+      imagesToAdd.append(imageToAdd)
+  graphqlclient.addImages(imagesToAdd)
+
+def add_image(imagesInDb, imageObject):
   # if image is not in list of images returned from DB then add
   if imageObject.name not in imagesInDb:
     graphqlclient.addImage(imageObject.name, imageObject, imageObject.namespace)

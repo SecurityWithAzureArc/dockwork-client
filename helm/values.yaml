@@ -8,5 +8,5 @@ image:
 
 namespace: dockwork
 
-service: http://20.84.177.64/graphql
-websocketservice: ws://20.84.177.64/graphql
+service: https://dockwork.azurewebsites.net/graphql
+websocketservice: ws://dockwork.azurewebsites.net/graphql

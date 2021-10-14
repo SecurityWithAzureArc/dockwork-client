@@ -54,3 +54,4 @@ def delete_image(namespace, image):
     # namespace example: 'k8s.io'
     # image example: 'registry.hub.docker.com/disi33/image-cleanup-worker:0.0.9'
     imagev1.Delete(images_pb2.DeleteImageRequest(name=image, sync=True), metadata=(('containerd-namespace', namespace),))
+    print("Image deleted")
