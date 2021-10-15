@@ -2,6 +2,9 @@ from containerdshim import containerdshim
 from python_graphql_client import GraphqlClient
 import asyncio
 import os
+import threading
+from threading import Lock
+from osshim import osshim
 
 service_endpoint = os.environ['SERVICE_ENDPOINT']
 service_endpoint_ws = os.environ['SERVICE_ENDPOINT_WS']
@@ -9,12 +12,10 @@ client = GraphqlClient(endpoint=service_endpoint)
 deleteImageNotificationClient = GraphqlClient(endpoint=service_endpoint_ws)
 
 deletedImageMutation = """
-    mutation DeltedImage ($name: String!, $node: ImageNodeInput!) {
-      deletedNodeImage(name:$name, imageNodeInput:$node) {
-        image {
-          name
-          deletedAt
-        }
+    mutation DeletedImage ($name: String!, $node: ImageNodeInput!) {
+      deletedNodeImage(imageName:$name, node:$node) {
+        name
+        deletedAt
       }
     }
 """
@@ -71,17 +72,9 @@ addImageMutation = """
 """
 
 addImagesMutation = """
-    mutation AddImage ($images: ImageInput!) {
-      addImage(images:$images) {
-        images{
-          name
-          nodes {
-            name
-            namespace
-          }
-          createdAt
-          deletedAt
-        }
+    mutation AddImages ($images: [ImageInput!]) {
+      addImages(images:$images) {
+        name
       }
     }
 """
@@ -89,28 +82,38 @@ addImagesMutation = """
 # List for a notification and call delete_image with image info
 # def deleteImageNotificationAsync():
 #   asyncio.run(deleteImageNotificationClient.subscribe(query=deleteImageSubscription, handle=containerdshim.delete_image(data.name,data.node.namespace)))
-event_loop = asyncio.new_event_loop()
+
 def deleteImageNotificationAsync():
-  asyncio.set_event_loop(event_loop)
-  event_loop.run_forever()
-  asyncio.create_task(deleteImageNotificationClient.subscribe(query=deleteImageSubscription, handle=handleImageDeletion))
+  asyncio.run(deleteImageNotificationClient.subscribe(query=deleteImageSubscription, handle=handleImageDeletion))
 
 def handleImageDeletion(data):
-  lock = Lock()
-  lock.acquire() # will block if lock is already held
-  print("something")
-  print('deletion handler called')
-  lock.release()
-  
-  namespace = data['data']['nodes']['namespace']
-  image = data['data']['name']
+  namespaceData = data['data']['deleteImageNotification']['nodes']
+  namespace = ''
+  hostname=osshim.get_hostname() 
+  for dataset in namespaceData:
+    if dataset['name'] == hostname:
+      namespace = dataset['namespace']
+      break
+  if namespace == '':
+    lock.acquire()
+    print('ignore image deletion request for this node')
+    lock.release()
+  image = data['data']['deleteImageNotification']['name']
   containerdshim.delete_image(namespace, image)
-  print(data)
+  imageToRemove = { "name": image, "node": { "name": hostname, "namespace": namespace }}
+  deletedNodeImage(imageToRemove)
+  lock.acquire()
+  print('deleted image', image, 'in namespace', namespace)
+  lock.release()
 
-# def deletedNodeImage(image,namespace):
-#   variables = {"name": image, "imageNodeInput": {"node": image.name, "namespace": namespace.name}}
-#   data = client.execute(query=deletedImageMutation, variables=variables)
-#   print(data) 
+def removeImages(imagesToRemove):
+  for image in imagesToRemove:
+    deletedNodeImage(image)
+
+def deletedNodeImage(image):
+  variables = { 'name': image['name'], 'node': { 'name': image['node']['name'], 'namespace': image['node']['namespace']}}
+  data = client.execute(query=deletedImageMutation, variables=variables)
+  print(data) 
 
 def listImages():
   # variables = { "node": {"node": name, "namespace": namespace }, "deleted": True }
@@ -120,7 +123,6 @@ def listImages():
   if imageData is None:
     return []
   for image in imageData:
-    # containerdshim.delete_iamge(image['nodes']['namespace'], image['name'])
     images.append(image)
   return images
 
@@ -134,3 +136,6 @@ def addImages(imagesToAdd):
   data = client.execute(query=addImagesMutation, variables=variables)
   print("Added images")
   print(data)
+
+thread = threading.Thread(target=deleteImageNotificationAsync)
+thread.start()

@@ -7,6 +7,7 @@ import threading
 from datetime import datetime
 import time
 import os
+from osshim import osshim
 
 def main():
   service_endpoint = os.environ['SERVICE_ENDPOINT']
@@ -60,11 +61,26 @@ def print_image_data(imageData):
 
 def process_images(imagesInDb, imageData):
   imagesToAdd = []
+  imagesToRemove = []
   for imageObject in imageData:
     if imageObject.name not in imagesInDb:
-      imageToAdd = { "name": imageObject.name, "nodes": { "name": imageObject, "namespace": imageObject.namespace }}
+      imageToAdd = { "name": imageObject.name, "node": { "name": imageObject.node, "namespace": imageObject.namespace }}
       imagesToAdd.append(imageToAdd)
   graphqlclient.addImages(imagesToAdd)
+  for imageObject in imagesInDb:
+    imageName = imageObject['name']
+    if imageName not in [i.name for i in imageData]:
+      nodeInfos = imageObject['nodes']
+      hostname = osshim.get_hostname()
+      nodeInfoContainer = list(filter(lambda n: n['name'] == hostname, nodeInfos))
+      if len(nodeInfoContainer) == 0:
+        # no match for this node
+        continue
+      nodeInfo = nodeInfoContainer[0]
+      imageToRemove = { "name": imageName, "node": { "name": nodeInfo['name'], "namespace": nodeInfo['namespace'] }}
+      imagesToRemove.append(imageToRemove)
+  graphqlclient.removeImages(imagesToRemove)
+  
 
 def add_image(imagesInDb, imageObject):
   # if image is not in list of images returned from DB then add
@@ -74,6 +90,7 @@ def add_image(imagesInDb, imageObject):
 def delete_image(imageObject):
   # execute graphql mutation for deleting the image from DB
   graphqlclient.deletedImageClient(imageObject.name, imageObject.namespace)
+
 
 
 if __name__ == '__main__':
