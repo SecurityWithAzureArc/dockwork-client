@@ -87,24 +87,29 @@ def deleteImageNotificationAsync():
   asyncio.run(deleteImageNotificationClient.subscribe(query=deleteImageSubscription, handle=handleImageDeletion))
 
 def handleImageDeletion(data):
-  namespaceData = data['data']['deleteImageNotification']['nodes']
-  namespace = ''
-  hostname=osshim.get_hostname() 
-  for dataset in namespaceData:
-    if dataset['name'] == hostname:
-      namespace = dataset['namespace']
-      break
-  if namespace == '':
+  try:
+    namespaceData = data['data']['deleteImageNotification']['nodes']
+    namespace = ''
+    hostname=osshim.get_hostname() 
+    image = data['data']['deleteImageNotification']['name']
+    for dataset in namespaceData:
+      if dataset['name'] == hostname:
+        namespace = dataset['namespace'].strip()
+        break
+    if namespace == '':
+      lock.acquire()
+      print('ignore image deletion request for this node - image:', image)
+      lock.release()
+      return
+    containerdshim.delete_image(namespace, image)
+    imageToRemove = { "name": image, "node": { "name": hostname, "namespace": namespace }}
+    deletedNodeImage(imageToRemove)
     lock.acquire()
-    print('ignore image deletion request for this node')
+    print('deleted image', image, 'in namespace', namespace)
     lock.release()
-  image = data['data']['deleteImageNotification']['name']
-  containerdshim.delete_image(namespace, image)
-  imageToRemove = { "name": image, "node": { "name": hostname, "namespace": namespace }}
-  deletedNodeImage(imageToRemove)
-  lock.acquire()
-  print('deleted image', image, 'in namespace', namespace)
-  lock.release()
+  finally:
+    thread = threading.Thread(target=deleteImageNotificationAsync)
+    thread.start()
 
 def removeImages(imagesToRemove):
   for image in imagesToRemove:
