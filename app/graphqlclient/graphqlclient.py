@@ -34,8 +34,8 @@ deleteImageSubscription = """
 """
 
 listImagesQuery = """
-    query ListImages {
-        images {
+    query ListImages ($skip: Int!) {
+        images(skip: $skip) {
             name
             nodes {
                 name
@@ -97,16 +97,12 @@ def handleImageDeletion(data):
         namespace = dataset['namespace'].strip()
         break
     if namespace == '':
-      lock.acquire()
       print('ignore image deletion request for this node - image:', image)
-      lock.release()
       return
     containerdshim.delete_image(namespace, image)
     imageToRemove = { "name": image, "node": { "name": hostname, "namespace": namespace }}
     deletedNodeImage(imageToRemove)
-    lock.acquire()
     print('deleted image', image, 'in namespace', namespace)
-    lock.release()
   finally:
     thread = threading.Thread(target=deleteImageNotificationAsync)
     thread.start()
@@ -120,15 +116,26 @@ def deletedNodeImage(image):
   data = client.execute(query=deletedImageMutation, variables=variables)
   print(data) 
 
-def listImages():
-  # variables = { "node": {"node": name, "namespace": namespace }, "deleted": True }
-  data = client.execute(query=listImagesQuery)['data']
+def listImagesInternal(skip):
+  variables = { "skip": skip }
+  data = client.execute(query=listImagesQuery, variables=variables)['data']
   images = []
   imageData = data['images']
   if imageData is None:
     return []
   for image in imageData:
     images.append(image)
+  return images
+
+def listImages():
+  images = []
+  skip = 0
+  imageChunk = listImagesInternal(skip)
+  while len(imageChunk) > 0:
+    skip += len(imageChunk)
+    images = images + imageChunk
+    imageChunk = listImagesInternal(skip)
+  print('num of images fetched from DB: ', len(images))
   return images
 
 def addImage(name,node,namespace):

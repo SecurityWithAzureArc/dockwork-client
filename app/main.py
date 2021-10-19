@@ -63,10 +63,11 @@ def process_images(imagesInDb, imageData):
   imagesToAdd = []
   imagesToRemove = []
   for imageObject in imageData:
-    if imageObject.name not in imagesInDb:
-      imageToAdd = { "name": imageObject.name, "node": { "name": imageObject.node, "namespace": imageObject.namespace }}
-      imagesToAdd.append(imageToAdd)
-  graphqlclient.addImages(imagesToAdd)
+    if imageObject.name not in [i['name'] for i in imagesInDb]:
+      # imageToAdd = { "name": imageObject.name, "node": { "name": imageObject.node, "namespace": imageObject.namespace }}
+      graphqlclient.addImage(imageObject.name, imageObject.node, imageObject.namespace)
+      # imagesToAdd.append(imageToAdd)
+  # graphqlclient.addImages(imagesToAdd)
   for imageObject in imagesInDb:
     imageName = imageObject['name']
     if imageName not in [i.name for i in imageData]:
